@@ -8,12 +8,16 @@ import com.viettel.ecommerce.exception.DuplicateDataException;
 import com.viettel.ecommerce.exception.ResourceNotFoundException;
 import com.viettel.ecommerce.repo.UserRepository;
 import com.viettel.ecommerce.util.DataUtil;
+import com.viettel.ecommerce.util.FileUploadUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.xml.crypto.Data;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -60,7 +64,7 @@ public class UserService {
         return mapper.map(user, UserDTO.class);
     }
 
-    public UserDTO updateUser(Integer userId, UserDTO updatedUser) {
+    public UserDTO updateUser(Integer userId, UserDTO updatedUser, MultipartFile multipartFile) throws IOException {
         User savedUser = repo.findById(userId).orElseThrow(
                 () -> new ResourceNotFoundException("User is not exists with a given id: " + userId)
         );
@@ -68,6 +72,16 @@ public class UserService {
         if (!DataUtil.isNullOrEmpty(existUser) && !DataUtil.safeEqual(existUser.getEmail(), updatedUser.getEmail())) {
             throw new DuplicateDataException("Can not update user with exist email: " + updatedUser.getEmail());
         }
+        if (!multipartFile.isEmpty()) {
+            String fileName = StringUtils.cleanPath(multipartFile.getOriginalFilename());
+            updatedUser.setPhotos(fileName);
+            String uploadDir = "user-photos/" + userId;
+            FileUploadUtil.cleanDir(uploadDir);
+            FileUploadUtil.saveFile(uploadDir, fileName, multipartFile);
+        } else {
+            FileUploadUtil.cleanDir("user-photos/" + userId);
+        }
+
         savedUser.setEmail(updatedUser.getEmail());
         savedUser.setPassword(encodePassword(updatedUser.getPassword()));
         savedUser.setEnabled(updatedUser.isEnabled());
@@ -84,5 +98,12 @@ public class UserService {
         }
         repo.save(savedUser);
         return mapper.map(savedUser, UserDTO.class);
+    }
+
+    public void deleteUser(Integer id) {
+        User user = repo.findById(id).orElseThrow(
+                () -> new ResourceNotFoundException("User is not exists with a given id: " + id)
+        );
+        repo.deleteById(id);
     }
 }

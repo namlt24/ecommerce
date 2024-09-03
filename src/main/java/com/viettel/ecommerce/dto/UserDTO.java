@@ -4,7 +4,7 @@ package com.viettel.ecommerce.dto;
 import java.util.Set;
 
 public class UserDTO {
-
+    private Integer id;
     private String email;
 
     private String password;
@@ -70,5 +70,13 @@ public class UserDTO {
 
     public void setRoles(Set<RoleDTO> roles) {
         this.roles = roles;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 }
