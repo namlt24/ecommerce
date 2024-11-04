@@ -11,12 +11,15 @@ import com.viettel.ecommerce.util.DataUtil;
 import com.viettel.ecommerce.util.FileUploadUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class UserService {
+    public static final int USERS_PER_PAGE = 4;
     public final ModelMapper mapper = new ModelMapper();
 
     @Autowired
@@ -72,7 +76,7 @@ public class UserService {
         if (!DataUtil.isNullOrEmpty(existUser) && !DataUtil.safeEqual(existUser.getEmail(), updatedUser.getEmail())) {
             throw new DuplicateDataException("Can not update user with exist email: " + updatedUser.getEmail());
         }
-        if (!multipartFile.isEmpty()) {
+        if (multipartFile != null) {
             String fileName = StringUtils.cleanPath(multipartFile.getOriginalFilename());
             updatedUser.setPhotos(fileName);
             String uploadDir = "user-photos/" + userId;
@@ -105,5 +109,12 @@ public class UserService {
                 () -> new ResourceNotFoundException("User is not exists with a given id: " + id)
         );
         repo.deleteById(id);
+    }
+
+    public Page<User> listByPage(int pageNum, String sortField, String sortDir){
+        Sort sort = Sort.by(sortField);
+        sort = sortDir.equals("asc") ? sort.ascending() : sort.descending();
+        Pageable pageable = PageRequest.of(pageNum - 1, USERS_PER_PAGE, sort);
+        return repo.findAll(pageable);
     }
 }
