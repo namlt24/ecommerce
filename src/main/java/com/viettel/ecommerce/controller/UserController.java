@@ -95,14 +95,15 @@ public class UserController {
 
     @GetMapping("/page/{pageNum}")
     public ResponseEntity<List<User>> listByPage(@PathVariable("pageNum") int pageNum,
-                                                 @Param("sortField") String sortField, @Param("sortDir") String sortDir) {
-        Page<User> page = userService.listByPage(pageNum, sortField, sortDir);
+                                                 @Param("sortField") String sortField, @Param("sortDir") String sortDir,
+                                                 @Param("keyword") String keyword) {
+        Page<User> page = userService.listByPage(pageNum, sortField, sortDir, keyword);
         List<User> userList = page.getContent();
         return ResponseEntity.ok(userList);
     }
 
     @GetMapping("/export/excel")
-    public void exportToExcel(HttpServletResponse response) throws Exception{
+    public void exportToExcel(HttpServletResponse response) throws Exception {
         List<User> listUsers = userService.listAll();
 
         UserExcelExporter exporter = new UserExcelExporter();
